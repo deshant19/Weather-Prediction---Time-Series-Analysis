@@ -1,0 +1,702 @@
+---
+title: "DATA-614 Project Report"
+author: "Group 2: Deshant Sachdeva, Ketan Bassi, Nanditha Sriram, Saurabh Anand"
+date: "`r format(Sys.time(), '%Y-%m-%d')`"
+output:
+  pdf_document:
+    extra_dependencies:
+    - bbm
+    - xcolor
+    toc: yes
+  html_document:
+    df_print: paged
+    toc: yes
+  html_notebook:
+    toc: yes
+---
+
+
+\pagebreak
+
+
+
+# The purpose/motivation
+
+
+## Introduction 
+
+Climate change can affect the intensity and frequency of precipitation. Warmer oceans increase the amount of water that evaporates into the air. This in turn can produce more intense precipitation. The potential impacts of heavy precipitation include crop damage, soil erosion, and an increase in flood risk due to heavy rains, which in turn can lead to injuries, drownings, and other flooding-related effects on health. The prediction helps people to take preventive measures and can help reduce possible financial loss. Accuracy of rainfall statements also has importance for countries whose economy relies heavily on agriculture. The stakeholders for our analysis can extend to a farmer who wants to know which is the best month to start planting and also to the government policymakers who need to prepare any policy for preventing floods during the rainy season & drought during the dry season in Australia.
+
+
+
+## Objective
+
+Australia is experiencing higher temperatures, more extreme droughts, fire seasons, floods, and more extreme weather due to climate change. Higher temperatures create a range of extreme weather and climate events: longer droughts in some areas of the continent, and in others, heavier rain storms due to greater evaporation. Marine heatwaves are on the rise devastating Australia’s kelp forests, seagrass meadows, coral reefs, and all the underwater creatures that depend on them. These impacts also affect humans—the creatures and habitats are sources of food and income. Coral bleaching has increased in frequency and severity on the Great Barrier Reef. It is now occurring so frequently that large areas are unlikely to ever recover. It can adversely affect the businesses and increase financial losses.
+Our aim is to conduct a series of studies by using machine learning techniques to create models that can predict the amount of rainfall and the maximum temperatures based on the weather data available for the next year to understand the impact of climate change in major cities in Australia.
+
+## Guiding Questions
+
+Which cities have the highest average rainfall and average maximum temperature across Australia?
+To predict if it will rain or not in the upcoming weeks.
+To predict the maximum temperature for future dates.
+
+
+
+# Data collection 
+
+This dataset contains about 10 years of daily weather observations from numerous Australian weather stations.
+
+## Attribute Information:
+
+
++----------------+------------------------------------------------+
+| Variable       | Description                                    | 
++================+================================================+
+| Date           | The date of observation                        | 
+|                |                                                | 
++----------------+------------------------------------------------+
+| Location       | The common name of the location of the         |
+|                | weather station                                | 
++----------------+------------------------------------------------+
+| MinTemp        | The minimum temperature in degrees celsius     |
+|                |                                                |
++----------------+------------------------------------------------+
+| MaxTemp        | The maximum temperature in degrees celsius     |
+|                |                                                |
++----------------+------------------------------------------------+
+| Rainfall       | The amount of rainfall recorded for the        |
+|                | day in mm                                      |
++----------------+------------------------------------------------+
+| Evaporation    | The so-called Class A pan evaporation (mm)     |
+|                | in the 24 hours to 9am                         | 
++----------------+------------------------------------------------+
+| Sunshine       | The number of hours of bright sunshine         |
+|                | in the day                                     | 
++----------------+------------------------------------------------+
+| WindGustDir    | The direction of the strongest wind gust in    |
+|                | the 24 hours to midnight                       |
++----------------+------------------------------------------------+
+| WindGustSpeed  | The speed (km/h) of the strongest wind gust    |
+|                | in the 24 hours to midnight                    |
++----------------+------------------------------------------------+
+| WindDir9am     | Direction of the wind at 9am                   |
+|                |                                                |
++----------------+------------------------------------------------+
+| WindDir3pm     | Direction of the wind at 3pm                   | 
+|                |                                                | 
++----------------+------------------------------------------------+
+| WindSpeed9am   | Speed of the wind at 9am                       | 
+|                |                                                | 
++----------------+------------------------------------------------+
+| WindSpeed3pm   | Speed of the wind at 3pm                       |
+|                |                                                |
++----------------+------------------------------------------------+
+| Humidity9am    | Humidity at 9am                                |
+|                |                                                |
++----------------+------------------------------------------------+
+| Humidity3pm    | Humidity at 3pm                                |
+|                |                                                |
++----------------+------------------------------------------------+
+| Pressure9am    | Atmospheric Pressure at 9am                    |
+|                |                                                |
++----------------+------------------------------------------------+
+| Pressure3pm    | Atmospheric Pressure at 3pm                    |
+|                |                                                |
++----------------+------------------------------------------------+
+| Cloud9am       | Cloud cover at 9am                             |
+|                |                                                |
++----------------+------------------------------------------------+
+| Cloud3pm       | Cloud cover at 3pm                             |
+|                |                                                |
++----------------+------------------------------------------------+
+| Temp9am        | Temperature at 9am                             |
+|                |                                                |
++----------------+------------------------------------------------+
+| Temp3pm        | Temperature at 3pm                             |
+|                |                                                |
++----------------+------------------------------------------------+
+| RainToday      | Whether it rained today or not                 |
+|                |                                                |
++----------------+------------------------------------------------+
+| RainTomorrow   | RainTomorrow is the target variable to predict.|  
+|                | It indicates whether it rained the next day,   |
+|                | Yes or No?  This column is Yes if the rain for | 
+|                | that day was 1mm or more.                      | 
++----------------+------------------------------------------------+
+
+
+
+\pagebreak
+
+# Data Wrangling 
+
+Data wrangling is one of the important part to prepare the data before implementing any model using it. 
+
+Below are the libraries and the directory we will be using,
+
+```{r warning=FALSE, echo = FALSE, eval = FALSE}
+
+library(ggplot2)
+library(dplyr)
+library(forecast)
+library(aTSA)
+library(stats)
+library(xts)
+
+```
+
+
+Getting the data from the file weatherAUS.csv using read.csv() function.
+
+```{r warning=FALSE, echo = FALSE}
+
+# Loading data
+
+weatherData <- read.csv("D:/DataScience - Lecture Work/614-Advanced Data Analytics/Project/archive/weatherAUS.csv")
+
+
+head(weatherData)
+
+```
+
+
+Before stating with data preparation here is the statistical summary that will help is understand the quantity and other statistical measures about our dataset.
+
+
+```{r, echo = FALSE}
+summary(weatherData)
+
+```
+
+
+
+** Data Preparation **
+
+As further steps we interpolated the NA and other missing values for each column,
+
+```{r warning=FALSE, echo = FALSE}
+
+# interpolating NA values for all columns
+
+library(forecast)
+
+weatherData$Evaporation <- na.interp(weatherData$Evaporation)
+
+weatherData$Sunshine <- na.interp(weatherData$Sunshine)
+
+weatherData$Location <- na.interp(weatherData$Location)
+
+weatherData$MinTemp <- na.interp(weatherData$MinTemp)
+
+weatherData$MaxTemp <- na.interp(weatherData$MaxTemp)
+
+weatherData$Rainfall <- na.interp(weatherData$Rainfall)
+
+weatherData$WindGustSpeed <- na.interp(weatherData$WindGustSpeed)
+
+weatherData$WindSpeed9am <- na.interp(weatherData$WindSpeed9am)
+
+weatherData$WindSpeed3pm <- na.interp(weatherData$WindSpeed3pm)
+
+weatherData$Humidity9am <- na.interp(weatherData$Humidity9am)
+
+weatherData$Humidity3pm <- na.interp(weatherData$Humidity3pm)
+
+weatherData$Pressure9am <- na.interp(weatherData$Pressure9am)
+
+weatherData$Pressure3pm <- na.interp(weatherData$Pressure3pm)
+
+weatherData$Cloud9am <- na.interp(weatherData$Cloud9am)
+
+weatherData$Cloud3pm <- na.interp(weatherData$Cloud3pm)
+
+weatherData$Temp9am <- na.interp(weatherData$Temp9am)
+
+weatherData$Temp3pm <- na.interp(weatherData$Temp3pm)
+
+
+```
+
+Removing the NA values
+
+```{r warning=FALSE, echo = FALSE}
+weatherData <- na.omit(weatherData)
+
+head(weatherData)
+
+```
+
+
+Below we are type casting the columns to the desirable data type in R,
+
+```{r warning=FALSE, echo = FALSE}
+
+ts_weatherData <- ts(weatherData, frequency = 365.25)
+
+weatherData$Location = as.factor(weatherData$Location)
+
+weatherData$WindGustDir = as.factor(weatherData$WindGustDir)
+
+weatherData$WindDir9am = as.factor(weatherData$WindDir9am)
+
+weatherData$WindDir3pm = as.factor(weatherData$WindDir3pm)
+
+weatherData$RainToday = as.factor(weatherData$RainToday)
+
+weatherData$RainTomorrow = as.factor(weatherData$RainTomorrow)
+
+
+
+```
+
+
+Further we are doing the Time series plot of MaxTemp to check whether the data is stationary of not.
+
+```{r warning=FALSE, echo = FALSE}
+maxtemp_ts_weatherData <- ts(weatherData$MaxTemp, frequency = 365.25)
+plot(maxtemp_ts_weatherData)
+
+abline(lm(maxtemp_ts_weatherData ~ time(maxtemp_ts_weatherData)), col=c("red"))
+
+```
+
+Doing moving average time series plot of MaxTemp,
+
+```{r warning=FALSE, echo = FALSE}
+library(TTR)
+
+plot(runMean(maxtemp_ts_weatherData, 1000))
+
+abline(
+  lm(runMean(maxtemp_ts_weatherData, 1000) ~ 
+       time(runMean(maxtemp_ts_weatherData, 1000))), col=c("red"))
+
+```
+
+From the results we can see that the temperature remains to be between 10-35. Also the regression line plotted in the above two graphs suggest the data to be stationary.
+
+However the due to a lot of data points we do not see the trends which is a requirement for our time series analysis prediction. Hence we will process with aggregating the data. We are considering to aggregate weekly data in order to determine our data points and the data obtained will be used for prediction.
+
+Aggregating the data,
+
+```{r warning=FALSE, echo = FALSE}
+library(xts)
+
+
+agg_data <- as.xts(weatherData$MaxTemp,order.by=as.Date(weatherData$Date))
+weekly_maxTemp <- apply.weekly(agg_data, mean)
+```
+
+
+Plotting the results obtained from the weekly data,
+
+```{r warning=FALSE, echo = FALSE}
+maxtemp_ts_weatherData <- ts(weekly_maxTemp, frequency = 52)
+plot(maxtemp_ts_weatherData)
+
+abline(lm(maxtemp_ts_weatherData ~ time(maxtemp_ts_weatherData)), col=c("red"))
+```
+
+Next, we will create box plots for each month. First, we need to change it to weekly data, which we can do using the cycle() function.
+
+```{r warning=FALSE, echo = FALSE}
+cycle <- cycle(maxtemp_ts_weatherData)
+
+head(cycle, 52)
+```
+
+
+
+```{r warning=FALSE, echo = FALSE}
+boxplot(maxtemp_ts_weatherData ~ cycle(maxtemp_ts_weatherData))
+```
+
+
+Finally, we create the Autcorrelation and Partial Autocorrelation plots in order to check whether the elements of a time series are positively correlated, negatively correlated, or independent of each other.
+
+```{r warning=FALSE, echo = FALSE}
+acf(maxtemp_ts_weatherData)
+```
+
+From the above graph of autocorrelation we can say that the variables are statistically correlated with each other.
+
+It can be seen that there is correlation among all lags. This is expected, because there is a trend in our dataset. If take the acf of the lags, then we will see that the autocorrelation between most lags goes away.
+
+```{r warning=FALSE, echo = FALSE}
+acf(diff(maxtemp_ts_weatherData))
+```
+
+From the above graph of autocorrelation we can say that now variables are statistically not much correlated with each other.
+
+The partial autocorrelation (pacf) removes the correlations that are due to an indirect effect, and just focuses on direct effects.
+
+```{r warning=FALSE, echo = FALSE}
+pacf(maxtemp_ts_weatherData)
+```
+
+From the above pacg graph we can see that the lags are not much statistically significant except the first lag and hence we can say that there are not many direct correlations in our data.
+
+```{r warning=FALSE, echo = FALSE}
+pacf(diff(maxtemp_ts_weatherData))
+```
+
+From the above plot of pacf the partial autocorrelations for lags 1 and 2 are statistically significant. The subsequent lags are nearly significant and is negatively correlated suggesting an inverse effect from one observation with respect to the next observation.
+
+
+Next we will do a Augmented Dickey-Fuller test in order to determine whether the data is stationary or not, giving us more insights about any trend in data.
+
+```{r warning=FALSE, echo = FALSE}
+library(aTSA)
+# Augmented Dickey-Fuller test for non-stationary
+adf.test(maxtemp_ts_weatherData)
+```
+
+As we can see that the result obtained is not stationary. Hence we will take the diff of the data in order to check whether the data is further stationary or not.
+
+```{r warning=FALSE, echo = FALSE}
+# Augmented Dickey-Fuller test for non-stationary
+adf.test(diff(maxtemp_ts_weatherData))
+```
+
+
+From the above results obtained we that infer that there is no drift or trend in the final data that we obtained. Further we will proceed with Time series analysis and perform predictions on rainfall data.
+
+
+### Similarly we will perform the data wrangling on Rainfall to check whether the data is stationary of not,
+
+```{r warning=FALSE,  echo = FALSE}
+rainfall_ts_weatherData <- ts(weatherData$Rainfall, frequency = 365.25)
+plot(rainfall_ts_weatherData)
+
+abline(lm(rainfall_ts_weatherData ~ time(rainfall_ts_weatherData)), col=c("red"))
+```
+
+Doing moving average time series plot of Rainfall data,
+
+```{r warning=FALSE, echo = FALSE}
+library(TTR)
+
+plot(runMean(rainfall_ts_weatherData, 1000))
+
+abline(
+  lm(runMean(rainfall_ts_weatherData, 1000) ~ 
+       time(runMean(rainfall_ts_weatherData, 1000))), col=c("red"))
+
+```
+
+From the results we can see that the rainfall remains to be between 2-3 mm. Also the regression line plotted in the above two graphs suggest the data to be stationary.
+
+However the due to a lot of data points we do not see the trends which is a requirement for our time series analysis prediction. Hence we will process with aggregating the data. We are considering to aggregate weekly data in order to determine our data points and the data obtained will be used for prediction.
+
+Aggregating the rainfall data,
+
+```{r warning=FALSE, echo = FALSE}
+
+rainfall_agg_data <- as.xts(weatherData$Rainfall,order.by=as.Date(weatherData$Date))
+weekly_rainfall <- apply.weekly(rainfall_agg_data, mean)
+
+```
+
+
+Plotting the results obtained from the weekly data,
+
+```{r warning=FALSE, echo = FALSE}
+
+rainfall_ts_weatherData <- ts(weekly_rainfall, frequency = 52)
+plot(rainfall_ts_weatherData)
+
+abline(lm(rainfall_ts_weatherData ~ time(rainfall_ts_weatherData)), col=c("red"))
+```
+
+Next, we will create box plots for each week of the year. First, we need to change it to weekly data, which we can do using the cycle() function.
+
+```{r warning=FALSE, echo = FALSE}
+cycle <- cycle(rainfall_ts_weatherData)
+
+head(cycle, 52)
+```
+
+
+
+```{r warning=FALSE, echo = FALSE}
+boxplot(rainfall_ts_weatherData ~ cycle(rainfall_ts_weatherData))
+```
+
+
+Finally, we create the Autcorrelation and Partial Autocorrelation plots in order to check whether the elements of a time series are positively correlated, negatively correlated, or independent of each other.
+
+```{r warning=FALSE, echo = FALSE}
+acf(rainfall_ts_weatherData)
+```
+
+From the above graph of autocorrelation we can say that the variables are statistically correlated with each other.
+
+It can be seen that there is correlation among all lags. This is expected, because there is a trend in our dataset. If take the acf of the lags, then we will see that the autocorrelation between most lags goes away.
+
+```{r warning=FALSE, echo = FALSE}
+acf(diff(rainfall_ts_weatherData))
+```
+
+From the above graph of autocorrelation we can say that now variables are statistically not much correlated with each other.
+
+The partial autocorrelation (pacf) removes the correlations that are due to an indirect effect, and just focuses on direct effects.
+
+```{r warning=FALSE, echo = FALSE}
+pacf(rainfall_ts_weatherData)
+```
+
+From the above pacg graph we can see that the lags are not much statistically significant except the first lag and hence we can say that there are not many direct correlations in our data.
+
+```{r warning=FALSE, echo = FALSE}
+pacf(diff(rainfall_ts_weatherData))
+```
+
+From the above plot of pacf the partial autocorrelations for lags 1 and 2 are statistically significant. The subsequent lags are nearly significant and is negatively correlated suggesting an inverse effect from one observation with respect to the next observation.
+
+
+Next we will do a Augmented Dickey-Fuller test in order to determine whether the data is stationary or not, giving us more insights about any trend in data.
+
+```{r warning=FALSE, echo = FALSE}
+# Augmented Dickey-Fuller test for non-stationary
+adf.test(rainfall_ts_weatherData)
+```
+
+
+From the above results obtained we that infer that there is no drift or trend in the final data that we obtained after doing necessary data wrangling and hence we consider the data to be stationary. Further we will proceed with Time series analysis and perform predictions on rainfall using regression models.
+
+
+\pagebreak
+
+# Statistical analysis 
+
+
+Using arima to predict the amount of weekly rainfall :
+
+```{r, echo = FALSE}
+
+fit = arima(maxtemp_ts_weatherData, c(0, 1, 1), seasonal = list(order = c(0, 1, 1), period = 52))
+summary(fit)
+```
+
+We vizualize the max temperature for the next 52 weeks
+
+```{r, echo = FALSE}
+pred2 = predict(fit, 1*52)
+ts.plot(maxtemp_ts_weatherData ,pred2$pred, lty = c(1, 3))
+```
+
+```{r, echo = FALSE}
+fit_rain = arima(rainfall_ts_weatherData, c(0, 1, 1), seasonal = list(order = c(0, 1, 1), period = 52))
+summary(fit_rain)
+```
+
+We vizualize the rainfall for the next 52 weeks.
+
+```{r, echo = FALSE}
+pred_rain = predict(fit_rain, 1*52)
+ts.plot(rainfall_ts_weatherData ,pred_rain$pred, lty = c(1, 3))
+```
+
+
+```{r, echo = FALSE}
+ # Holt-winters decomposition (triple exponential smoothing)
+fit3 = HoltWinters(rainfall_ts_weatherData)
+plot(fit3) #plot the actual (in black) and fitted (red) values
+```
+Obtaining the correlation matrix:
+
+```{r, echo = FALSE}
+library(psych)
+
+corPlot(ts_weatherData)
+```
+
+We noe proceed to use ARIMA to include regression with ARIMA errors: Rainfall
+
+There are 494 values and the data is split as follows:
+350 - train set
+144 - test set
+
+```{r, echo = FALSE}
+#converting everything to ts
+minTemp_agg_data <- as.xts(weatherData$MinTemp,order.by=as.Date(weatherData$Date))
+weekly_minTemp <- apply.weekly(minTemp_agg_data, mean)
+ts_MinTemp <- ts(weekly_minTemp, frequency = 52)
+
+evaporation_agg_data <- as.xts(weatherData$Evaporation,order.by=as.Date(weatherData$Date))
+weekly_evaporation <- apply.weekly(evaporation_agg_data, mean)
+ts_Evaporation <- ts(weekly_evaporation, frequency = 52)
+
+Sunshine_agg_data <- as.xts(weatherData$Sunshine,order.by=as.Date(weatherData$Date))
+weekly_Sunshine <- apply.weekly(Sunshine_agg_data, mean)
+ts_Sunshine <- ts(weekly_Sunshine, frequency = 52)
+
+WindGustSpeed_agg_data <- as.xts(weatherData$WindGustSpeed,order.by=as.Date(weatherData$Date))
+weekly_WindGustSpeed <- apply.weekly(WindGustSpeed_agg_data, mean)
+ts_WindGustSpeed <- ts(weekly_WindGustSpeed, frequency = 52)
+
+WindSpeed9am_agg_data <- as.xts(weatherData$WindSpeed9am,order.by=as.Date(weatherData$Date))
+weekly_WindSpeed9am <- apply.weekly(WindSpeed9am_agg_data, mean)
+ts_WindSpeed9am <- ts(weekly_WindSpeed9am, frequency = 52)
+
+WindSpeed3pm_agg_data <- as.xts(weatherData$WindSpeed3pm,order.by=as.Date(weatherData$Date))
+weekly_WindSpeed3pm <- apply.weekly(WindSpeed3pm_agg_data, mean)
+ts_WindSpeed3pm <- ts(weekly_WindSpeed3pm, frequency = 52)
+
+Humidity9am_agg_data <- as.xts(weatherData$Humidity9am,order.by=as.Date(weatherData$Date))
+weekly_Humidity9am <- apply.weekly(Humidity9am_agg_data, mean)
+ts_Humidity9am <- ts(weekly_Humidity9am, frequency = 52)
+
+Humidity3pm_agg_data <- as.xts(weatherData$Humidity3pm,order.by=as.Date(weatherData$Date))
+weekly_Humidity3pm <- apply.weekly(Humidity3pm_agg_data, mean)
+ts_Humidity3pm <- ts(weekly_Humidity3pm, frequency = 52)
+
+Pressure9am_agg_data <- as.xts(weatherData$Pressure9am,order.by=as.Date(weatherData$Date))
+weekly_Pressure9am <- apply.weekly(Pressure9am_agg_data, mean)
+ts_Pressure9am <- ts(weekly_Pressure9am, frequency = 52)
+
+Pressure3pm_agg_data <- as.xts(weatherData$Pressure3pm,order.by=as.Date(weatherData$Date))
+weekly_Pressure3pm <- apply.weekly(Pressure3pm_agg_data, mean)
+ts_Pressure3pm <- ts(weekly_Pressure3pm, frequency = 52)
+
+Cloud9am_agg_data <- as.xts(weatherData$Cloud9am,order.by=as.Date(weatherData$Date))
+weekly_Cloud9am <- apply.weekly(Cloud9am_agg_data, mean)
+ts_Cloud9am <- ts(weekly_Cloud9am, frequency = 52)
+
+Cloud3pm_agg_data <- as.xts(weatherData$Cloud3pm,order.by=as.Date(weatherData$Date))
+weekly_Cloud3pm <- apply.weekly(Cloud3pm_agg_data, mean)
+ts_Cloud3pm <- ts(weekly_Cloud3pm, frequency = 52)
+
+Temp9am_agg_data <- as.xts(weatherData$Temp9am,order.by=as.Date(weatherData$Date))
+weekly_Temp9am <- apply.weekly(Temp9am_agg_data, mean)
+ts_Temp9am <- ts(weekly_Temp9am, frequency = 52)
+
+Temp3pm_agg_data <- as.xts(weatherData$Temp3pm,order.by=as.Date(weatherData$Date))
+weekly_Temp3pm <- apply.weekly(Temp3pm_agg_data, mean)
+ts_Temp3pm <- ts(weekly_Temp3pm, frequency = 52)
+
+#combining individual variables into a vector
+train = cbind(ts_MinTemp[1:350], maxtemp_ts_weatherData[1:350],
+ts_Evaporation[1:350],
+ts_Sunshine[1:350],
+ts_WindGustSpeed[1:350],
+ts_WindSpeed9am[1:350],
+ts_WindSpeed3pm[1:350],
+ts_Humidity9am[1:350] ,
+ts_Humidity3pm[1:350] ,
+ts_Pressure9am[1:350] ,
+ts_Pressure3pm[1:350],
+ts_Cloud9am[1:350] ,
+ts_Cloud3pm[1:350] ,
+ts_Temp9am[1:350],
+ts_Temp3pm[1:350])
+train2 = ts(train, frequency = 52)
+
+regmode_rainfall = auto.arima(rainfall_ts_weatherData[1:350], xreg = train2)
+                               
+summary(regmode_rainfall)
+```
+
+
+```{r, echo = FALSE}
+library(lmtest)
+coeftest(regmode_rainfall)
+```
+
+We observe that there are many insignificant variables. We move on to create a new model by selecting all the variables that have a p-value less than 0.05 to create our new model. 
+
+```{r, echo = FALSE}
+train3 = cbind(
+ts_Evaporation[1:350],
+ts_WindGustSpeed[1:350], 
+ts_WindSpeed3pm[1:350],
+ts_Humidity3pm[1:350] 
+)
+train4 = ts(train3, frequency = 52)
+regmode_rainfall_new = auto.arima(rainfall_ts_weatherData[1:350], xreg = train4)
+summary(regmode_rainfall_new)
+```
+
+Coefficients of the new model:
+```{r, echo = FALSE}
+coeftest(regmode_rainfall_new)
+```
+
+The residuals are as follows:
+```{r, echo = FALSE}
+# can check the errors using the Ljung-Box test
+checkresiduals(regmode_rainfall_new)
+```
+The p value is less than 0.05. This means that the model does not pass the Ljung-Box test. But the plots obtained meet all the requirements. Hence we proceed to predict the data using the test set.  
+
+
+```{r, echo = FALSE}
+test = cbind(
+ts_Evaporation[351:494],
+ts_WindGustSpeed[351:494],
+ts_WindSpeed3pm[351:494],
+ts_Humidity3pm[351:494])
+test2 = ts(test, frequency = 52)
+#ex-poste prediction:
+fcast = forecast::forecast(regmode_rainfall_new, xreg = test2)
+autoplot(fcast)
+
+```
+
+
+```{r, echo = FALSE}
+autoplot(ts(rainfall_ts_weatherData[351:494]))
+```
+
+```{r, echo = FALSE}
+par(mfrow = c(2, 1))
+plot(fcast)
+plot(ts(rainfall_ts_weatherData))
+```
+
+Finding the accuracy and RMSE:
+
+```{r, echo = FALSE}
+accuracy(fcast,rainfall_ts_weatherData[351:494])
+```
+
+From the model we obtain the amount of predicted rainfall for the subsequent weeks. With this data we can extrapolate and say if it rain or not in a particular week. We take the threshold as 2mm. If a value is recorded more than o equal to 2mm, we can that we can expect rain in that week. 
+
+Creating a dataframe with the week number and the prediction:
+```{r, echo = FALSE}
+Week <- seq(1:145)
+Prediction <- rep(0,145)
+
+rain_next_week = as.numeric(fcast$mean)
+Prediction[rain_next_week >= 2] <- 1
+
+data_predict <- data.frame(Week,Prediction)
+```
+
+Plotting the data: 
+```{r, echo = FALSE}
+plot(data_predict)
+```
+
+Discussions & Recommendation
+
+• Starting from a basic weather dataset, we went through an interesting data story involving exploratory analysis and models building. We spot strengths and weaknesses of our prediction models.
+
+• Our prediction can be useful for a farmer who wants to know which the best month to start planting and also for the government who need to prepare any policy for preventing flood on rainy season & drought on dry season.
+
+• We recommend using more data for training the model since forecasting is based only on the historical trend, the more accurate prediction must be combined using meteorological data and some expertise from climate experts.
+
+Future Scope
+
+Create more expressive models using Tensorflow
+Work on including temperature models and its predictions.
+Work on using the applications of Deep machine learning algorithms for predictions.
+
+\pagebreak
+
+# References
+
+• US EPA, O. (2016). Climate Change Indicators: Heavy Precipitation. [online] US EPA. Available at: https://www.epa.gov/climate-indicators/climate-change-indicators-heavy- precipitation#:~:text=Climate%20change%20can%20affect%20the.
+
+• kaggle.com. (n.d.). Rain in Australia. [online] Available at: https://www.kaggle.com/jsphyg/weather-dataset-rattle-package.
+
