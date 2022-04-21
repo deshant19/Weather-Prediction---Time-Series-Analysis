@@ -11,9 +11,9 @@ Our aim is to conduct a series of studies by using machine learning techniques t
 This dataset contains about 10 years of daily weather observations from numerous Australian weather stations.
 Attribute Information:
 
-Variable	    Description
-Date	        The date of observation
-Location	    The common name of the location of the weather station
+- Variable	    Description
+- Date	        The date of observation
+- Location	    The common name of the location of the weather station
 MinTemp	      The minimum temperature in degrees celsius
 MaxTemp	      The maximum temperature in degrees celsius
 Rainfall	    The amount of rainfall recorded for the day in mm
@@ -37,6 +37,6 @@ RainToday	    Whether it rained today or not
 RainTomorrow	RainTomorrow is the target variable to predict. It means -- did it rain the next day, Yes or No?  This column is Yes if the rain for that day was 1mm or  more.
 
 References
-●	US EPA, O. (2016). Climate Change Indicators: Heavy Precipitation. [online] US EPA. Available at: https://www.epa.gov/climate-indicators/climate-change-indicators-heavy-precipitation#:~:text=Climate%20change%20can%20affect%20the.
-●	kaggle.com. (n.d.). Rain in Australia. [online] Available at: https://www.kaggle.com/jsphyg/weather-dataset-rattle-package.
+-	US EPA, O. (2016). Climate Change Indicators: Heavy Precipitation. [online] US EPA. Available at: https://www.epa.gov/climate-indicators/climate-change-indicators-heavy-precipitation#:~:text=Climate%20change%20can%20affect%20the.
+-	kaggle.com. (n.d.). Rain in Australia. [online] Available at: https://www.kaggle.com/jsphyg/weather-dataset-rattle-package.
 
